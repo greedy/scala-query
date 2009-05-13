@@ -1,4 +1,4 @@
-package test
+package com.novocode.squery
 
 import java.sql._
 import scala.Array
@@ -8,12 +8,14 @@ import com.novocode.squery.simple.Implicit._
 import com.novocode.squery.session._
 import com.novocode.squery.session.SessionFactory._
 
+import org.junit._
 
-object JDBCTest {
+class JDBCTest {
 
   implicit def rsToUser(rs: PositionedResult) = new User(rs.nextInt(), rs.nextString())
 
-  def main(args : Array[String]) {
+  @Test
+  def test {
 
     val createTable = updateNA("create table USERS(ID int not null primary key, NAME varchar(255))")
     val populateUsers = updateNA("insert into USERS values(1, 'szeiger'), (0, 'admin'), (2, 'guest'); insert into USERS values(3, 'foo')")

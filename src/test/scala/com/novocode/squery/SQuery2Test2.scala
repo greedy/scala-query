@@ -1,13 +1,19 @@
-package test
+package com.novocode.squery
 
 import java.lang.Integer
+import java.sql.Timestamp
+import java.util.Date
+
 import com.novocode.squery.combinator._
 import com.novocode.squery.combinator.Implicit._
 import com.novocode.squery.session._
 import com.novocode.squery.session.SessionFactory._
 
-object SQuery2Test2 {
-  def main(args: Array[String]) {
+import org.junit._
+
+class SQuery2SimpleTest {
+  @Test
+  def test {
 
     case class User(id: Integer, first: String, last: String)
 
@@ -20,11 +26,12 @@ object SQuery2Test2 {
       //def orders = Orders where { _.userID is id }
     }
 
-    object Orders extends Table[(Integer, Integer, String)]("orders") {
+    object Orders extends Table[(Integer, Integer, String, Timestamp)]("orders") {
       def userID = intColumn("userID", O.NotNull)
       def orderID = intColumn("orderID", O.AutoInc, O.NotNull)
       def product = stringColumn("product")
-      def * = userID ~ orderID ~ product
+      def orderDate = timestampColumn("orderDate", O.NotNull)
+      def * = userID ~ orderID ~ product ~ orderDate
     }
 
     val sf = new DriverManagerSessionFactory("org.h2.Driver", "jdbc:h2:mem:test1")
@@ -52,12 +59,12 @@ object SQuery2Test2 {
 
       for(u <- allUsers
           if u.first != "Apu" && u.first != "Snowball"; i <- 1 to 2)
-        Orders.insert(u.id, null, "Gizmo "+((Math.random*10)+1).toInt)
+        Orders.insert(u.id, null, "Gizmo "+((Math.random*10)+1).toInt, new Timestamp(new Date().getTime))
 
       val q3 = for {
         u <- Users
         o <- Orders where { o => (u.id is o.userID) && (u.last isNot null) }
-      } yield (u.first ~ u.last ~ o.orderID ~ o.product).sortBy(u.first)
+      } yield (u.first ~ u.last ~ o.orderID ~ o.product ~ o.orderDate).sortBy(u.first)
       println("q3: " + q3.selectStatement)
       println("All Orders by Users with a last name by first name:")
       q3.foreach(o => println("  "+o))

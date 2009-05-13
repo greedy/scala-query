@@ -29,6 +29,7 @@ class DDLBuilder(table: Table[_]) {
       case _:BooleanColumn => "BOOLEAN"
       case _:IntColumn => "INT"
       case _:StringColumn => "VARCHAR"
+      case _:TimestampColumn => "TIMESTAMP"
       case _ => throw new SQueryException("No SQL type mapping for column type "+c.getClass.getName)
     }
     c match {

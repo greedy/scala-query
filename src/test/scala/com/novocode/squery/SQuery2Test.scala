@@ -1,11 +1,14 @@
-package test
+package com.novocode.squery
 
 import com.novocode.squery.combinator.{Table, Join, Query, ColumnOp, StatementCombinatorQueryInvoker, Projection}
 import com.novocode.squery.combinator.sql.{QueryBuilder, InsertUpdateBuilder, DDLBuilder}
 import com.novocode.squery.combinator.Implicit._
 
-object SQuery2Test {
-  def main(args: Array[String]) {
+import org.junit._
+
+class SQuery2Test {
+  @Test
+  def test {
 
     object Users extends Table[(Integer, String, String)]("users") {
       def id = intColumn("id")

@@ -2,13 +2,14 @@ package com.novocode.squery.combinator
 
 import com.novocode.squery.session.{PositionedResult, PositionedParameters}
 import java.io.PrintWriter
+import java.sql.Timestamp
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  Columns
 /////////////////////////////////////////////////////////////////////////////
 
-sealed trait Column[+T] extends WithOp with Dump {
+sealed trait Column[T] extends WithOp with Dump {
   def count = Operator.Count(this)
   def max = Operator.Max(this)
   def is[E](e: Column[E]) = Operator.Is(this, e)
@@ -61,6 +62,11 @@ trait StringColumn extends SimpleColumn[String] {
   def setParameter(ps: PositionedParameters, value: String): Unit = ps.setString(value)
 }
 
+trait TimestampColumn extends SimpleColumn[Timestamp] {
+  def getResult(rs: PositionedResult): Timestamp = rs.nextTimestamp
+  def setParameter(ps: PositionedParameters, value: Timestamp): Unit = ps.setTimestamp(value)
+}
+
 abstract class WrappedColumn[T](val parent: SimpleColumn[T]) extends ConvertibleColumn[T] { self: SimpleColumn[T] =>
   def dumpThis(out: PrintWriter, prefix: String, name: String, dumper: Dump.Dumper) {
     dumper(out, prefix, name+"<WrappedColumn> ", parent)
@@ -98,7 +104,8 @@ abstract class Table[T](val tableName: String) extends TableBase[T] with Convert
   def stringColumn(n: String, options: ColumnOption*) = new NamedColumn[String](this, n, options:_*) with StringColumn
   def intColumn(n: String, options: ColumnOption*) = new NamedColumn[java.lang.Integer](this, n, options:_*) with IntColumn
   def booleanColumn(n: String, options: ColumnOption*) = new NamedColumn[java.lang.Boolean](this, n, options:_*) with BooleanColumn
-
+  def timestampColumn(n: String, options: ColumnOption*) = new NamedColumn[Timestamp](this, n, options:_*) with TimestampColumn
+  
   def * : ConvertibleColumn[T]
 
   def getResult(rs: PositionedResult) = *.getResult(rs)
@@ -120,6 +127,14 @@ class Join[+T1 <: TableBase.T_, +T2 <: TableBase.T_](_left: T1, _right: T2) exte
 
 object Join {
   def unapply[T1 <: TableBase.T_, T2 <: TableBase.T_](j: Join[T1, T2]) = Some((j.left, j.right))
+}
+
+case class Union[T <: Column.T_](all: Boolean, query1: Query[T], query2: Query[T]) extends TableBase[Nothing] {
+  def dumpThis(out: PrintWriter, prefix: String, name: String, dumper: Dump.Dumper) {
+    out.println(prefix+name+(if(all) "Union all" else "Union"))
+    dumper(out, prefix+"  ", "query1: ", query1)
+    dumper(out, prefix+"  ", "query2: ", query2)
+  }
 }
 
 
